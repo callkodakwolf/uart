@@ -97,7 +97,14 @@ alias l='ls -CF'
 #   sleep 10; alert
 alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo error)" "$(history|tail -n1|sed -e '\''s/^\s*[0-9]\+\s*//;s/[;&|]\s*alert$//'\'')"'
 
+# Alias for git
 git_repo="git@github.com:callkodakwolf"
+alias gs='git status'
+alias ga='git add'
+alias gb='git branch'
+alias gc='git commit'
+
+
 
 # Alias definitions.
 # You may want to put all your additions into a separate file like
