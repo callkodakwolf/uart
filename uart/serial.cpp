@@ -12,7 +12,7 @@
 #include "uart_init.h"
 #include "stdin_init.h"
 
-#define SELF_TEST 1	
+#define PARSE 1	
 
 #define BUF_SIZE 14400 
 
@@ -50,8 +50,9 @@ int main(int argc, char** argv)
 	fd_set inputs;
 	struct timeval timeout, tm;
 	int state = 0;
-	int next_state = 0;
+	int last_state = 0;
 	int start_byte = 0x00;
+	uint8_t previous_byte = 0;
 	int end_byte = 0x01;
 	bool tilde = false;
 
@@ -66,56 +67,59 @@ int main(int argc, char** argv)
 		if( result < 0){
 			perror("select() error");
 			done = true;
-		}
-
-		else if ( result == 0){
+		}else if ( result == 0){
 			//printf(" 5s timeout ");
-		}
-		else{
+		}else{
 			if( FD_ISSET( serial, &inputs)){
 				int byte_count = read(serial,serialRX, BUF_SIZE);
 				if( byte_count == 0){
 					printf(" unknow read of 0 bytes\n");
 					done = true;
 					continue;
-				}
-				else{
-#if SELF_TEST
-				for( int k = 0;  k < byte_count; k++)
-					printf("%02x ", serialRX[k]);	
-#else
-					for( int i= 0; i< byte_count; i++)
-					{
-						state = next_state;
+				} else{
+					for( int i = 0;  i < byte_count; i++){
+#if PARSE
+/*						previous_byte = serialRX[i];
 						switch( state ){
 						case 0: // wait start byte
 								if( serialRX[i] > 0x7f && serialRX[i] < 0xc0){
 									 gettimeofday(&tm,NULL);
-									 printf("\n(%ld. %06ld) %02x ",tm.tv_sec, tm.tv_usec,serialRX[i]);
-									 next_state = 1;
+									 printf("\n(%ld. %06ld) ",tm.tv_sec, tm.tv_usec);
+								     state = 1;
+									 last_state = state;
 									 start_byte = serialRX[i];
-								 	end_byte = (serialRX[i] ^ 0x7f) | 0x80;
+								 	 end_byte = (serialRX[i] ^ 0x7f) | 0x80;
 								}else {
-									printf("%02x ",serialRX[i]);
-									next_state = 0;
+									 state = 0;
 								}
 								break;
 						case 1: // process MSG body
 								if( serialRX[i] < 0x80){
-									printf( "%02x ", serialRX[i]);
-									next_state = 1;
+									state = 1;
 								}
 								else {
-									if( serialRX[i] == end_byte )
-										printf("%02x",serialRX[i]);
-									else 
-										printf("**%02x**",serialRX[i]);
-									next_state = 0;
+									if( serialRX[i] != end_byte )
+										printf("**Error endbyte: ",serialRX[i]);
+									state = 0;
 								}
 								break;
 						}
-				 	}
+*/
+						if( previous_byte == 0xc0 && (serialRX[i]>0x7f && serialRX[i]<0xc0 ))
+						{	
+									 gettimeofday(&tm,NULL);
+									 printf("\n(%ld. %06ld) ",tm.tv_sec, tm.tv_usec);
+						}
+
+						if( previous_byte !=  0xc0 && (previous_byte & 0xc0)&& (serialRX[i]>0x7f && serialRX[i]<0xc0 ))
+						{	
+									 gettimeofday(&tm,NULL);
+									 printf("\n(%ld. %06ld) ",tm.tv_sec, tm.tv_usec);
+						}
 #endif
+						printf("%02x ", serialRX[i]);
+						previous_byte = serialRX[i];
+					}
 				}
 			}
 			else if( FD_ISSET( tty_in, &inputs )){
