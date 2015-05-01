@@ -1,6 +1,6 @@
 SHELL=bash
 
-DIR_Inc=../../common
+DIR_Inc=../common
 
 all: make
 
